@@ -23,6 +23,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 
 from sklearn.decomposition import PCA         # importing PCA for dimensional reduction..
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA     # lda library
 
 data = pd.read_csv("Book1.csv")                # loading csv file into data.
 features= data.iloc[:, 1:10]                   #  extracting features from data.
@@ -70,8 +71,7 @@ def kNN_withoutPCA(traindata, testdata):
 
     t1 = time.clock() - t0       # time analysis
     print("Time elapsed: ", t1) # CPU seconds elapsed (floating point)
-    return y_pred
-
+    return y_pred, t1
 
 #.................k-NN with PCA....................
 
@@ -110,13 +110,74 @@ def knn_PCA(traindata, testdata):
 
 
 
-    t2 = time.clock() - t0  -t1     # time analysis
+    t2 = time.clock()-t0    # time analysis
     print("Time elapsed: ", t2) # CPU seconds elapsed (floating point)
-    return y_pred_pca
+    return y_pred_pca, t2
+
+
+#.........................kNN with LDA.......................
+
+def knn_LDA(traindata, testdata):
+    print("............KNN with LDA................")
+    
+    # fit and transform data  dimension reduction
+    lda = LDA(n_components=2)
+    X_train_lda = lda.fit_transform(traindata, y_train)    #train data after lda reduction
+    X_test_lda = lda.transform(testdata)
 
 
 
+   
+    print(len(X_train_lda))
+    import math
+    k=math.sqrt(len(y_test))
+    print(k)
+    
+    #...Creating  KNN Classifier
+    knn = KNeighborsClassifier(n_neighbors=345, metric='euclidean')      #check for accuracy when no. of neighbour=5 or 7
+    
+    #..Training the model using the training sets
+    knn.fit(X_train_lda, y_train)
+    
+    #..Predict the response for test dataset
+    print("X_test_lda:", X_test_lda)
+    y_pred_lda = knn.predict(X_test_lda)
+    print("Prediction with k-NN with lda:",y_pred_lda)
+   
 
-kNN_withoutPCA(X_train, X_test)    
-knn_PCA(X_train, X_test)
+    #..Evaluating  Model...
+    cm=confusion_matrix(y_test, y_pred_lda)
+    print("Confusion of k-NN with LDA:\n",cm)
+
+
+    # Model Accuracy, how often is the classifier correct?
+    print("Accuracy:",metrics.accuracy_score(y_test, y_pred_lda))     #### for measuring accuracy ###
+    # print(f1_score(y_test, y_pred))
+
+
+
+    t3= time.clock() - t0   # time analysis
+    print("Time elapsed: ", t3) # CPU seconds elapsed (floating point)
+    return y_pred_lda,t3
+
+
+
+time1=0
+time_pca=0
+time_lda=0
+
+
+
+y_knn, time1 =kNN_withoutPCA(X_train, X_test)    
+
+y_knn_pca, time_pca=knn_PCA(X_train, X_test)
+
+y_knn_lda, time_lda=knn_LDA(X_train, X_test)
+
+
+print("t0:", t0)
+print("time without dimension reduction:", time1)
+print("time after pca:", time_pca-time1)
+print("time after lda:", time_lda-time_pca)
+# print("t2:", t2)
 
